@@ -20,6 +20,7 @@ const port = 3000;
 // Serve static files (HTML, CSS, JS)
 app.use(express.static(path.join(__dirname, 'public')));
 
+
 // Telegram bot configuration
 const telegramBotToken = '7977890436:AAF3sM8rgfHMGRjlFwHlm9eJi3pUE0rDBdI'; // Replace with your bot token
 const chatId = '1819194668'; // Replace with your chat ID
